@@ -1,5 +1,6 @@
 package br.com.zup.edu.ligaqualidade.desafiobiblioteca.modifique;
 
+import br.com.zup.edu.ligaqualidade.desafiobiblioteca.DadosDevolucao;
 import br.com.zup.edu.ligaqualidade.desafiobiblioteca.DadosEmprestimo;
 import br.com.zup.edu.ligaqualidade.desafiobiblioteca.EmprestimoConcedido;
 import br.com.zup.edu.ligaqualidade.desafiobiblioteca.modifique.exceptions.EmprestimoBusinessException;
@@ -18,11 +19,15 @@ public class EmprestimoHandler {
     Set<DadosEmprestimo> emprestimos;
     Set<DadosUsuario> usuarios;
     Set<DadosExemplar> exemplares;
-
-    public EmprestimoHandler(Set<DadosUsuario> usuarios, Set<DadosEmprestimo> emprestimos, Set<DadosExemplar> exemplares) {
+    Set<DadosDevolucao> devolucoes;
+    LocalDate dataParaSerConsideradaNaExpiracao;
+    public EmprestimoHandler(Set<DadosUsuario> usuarios, Set<DadosEmprestimo> emprestimos, Set<DadosExemplar> exemplares, Set<DadosDevolucao> devolucoes, LocalDate dataParaSerConsideradaNaExpiracao) {
         this.usuarios = usuarios;
         this.emprestimos = emprestimos;
         this.exemplares = exemplares;
+        this.devolucoes = devolucoes;
+        this.dataParaSerConsideradaNaExpiracao = dataParaSerConsideradaNaExpiracao;
+
     }
 
     public Set<EmprestimoConcedido> concedeEmprestimos(){
@@ -38,7 +43,17 @@ public class EmprestimoHandler {
 
                 LocalDate dataPrevistaDevolucao = calculateDataPrevistaDevolucao(emprestimo);
 
-                emprestimosConcedidos.add(new EmprestimoConcedido(usuario.idUsuario, exemplar.idExemplar, dataPrevistaDevolucao));
+
+                EmprestimoConcedido emprestimoConcedido = new EmprestimoConcedido(usuario.idUsuario, exemplar.idExemplar, dataPrevistaDevolucao);
+
+                //valida devolução
+
+                if (dataPrevistaDevolucao.isBefore(this.dataParaSerConsideradaNaExpiracao)) {
+                    emprestimoConcedido.registraDevolucao();
+                }
+
+                emprestimosConcedidos.add(emprestimoConcedido);
+
             } catch (EmprestimoValidationException e) {
                 System.out.println(e.getMessage());
             } catch (EmprestimoBusinessException e) {
